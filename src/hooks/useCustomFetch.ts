@@ -58,7 +58,6 @@ export function useCustomFetch() {
 
       for (const key of cacheKeys) {
         const clearKey = endpointsToClear.some((endpoint) => key.startsWith(endpoint))
-
         if (clearKey) {
           cache.current.delete(key)
         }

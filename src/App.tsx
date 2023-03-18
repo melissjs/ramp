@@ -13,35 +13,55 @@ export function App() {
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false)
+  const [isPaginatedView, setIsPaginatedView] = useState(true)
 
   const transactions = useMemo(
     () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
     [paginatedTransactions, transactionsByEmployee]
   )
 
+  const loadEmployees = useCallback( async () => {
+    setIsLoadingEmployees(true)
+    await employeeUtils.fetchAll()
+    setIsLoadingEmployees(false)
+  }, [employeeUtils])
+
+
   const loadAllTransactions = useCallback(async () => {
     setIsLoading(true)
     transactionsByEmployeeUtils.invalidateData()
-
-    await employeeUtils.fetchAll()
     await paginatedTransactionsUtils.fetchAll()
-
     setIsLoading(false)
-  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
+    setIsPaginatedView(true)
+  }, [paginatedTransactionsUtils, transactionsByEmployeeUtils])
 
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
+      setIsLoading(true)
       paginatedTransactionsUtils.invalidateData()
       await transactionsByEmployeeUtils.fetchById(employeeId)
+      setIsLoading(false)
+      setIsPaginatedView(false)
     },
     [paginatedTransactionsUtils, transactionsByEmployeeUtils]
   )
 
   useEffect(() => {
-    if (employees === null && !employeeUtils.loading) {
+    if (employees === null && !isLoadingEmployees) {
+      loadEmployees()
+    }
+    if (transactions === null && !isLoading) {
       loadAllTransactions()
     }
-  }, [employeeUtils.loading, employees, loadAllTransactions])
+  }, [
+    loadAllTransactions,
+    isLoadingEmployees,
+    loadEmployees,
+    transactions,
+    employees,
+    isLoading
+  ])
 
   return (
     <Fragment>
@@ -51,7 +71,7 @@ export function App() {
         <hr className="RampBreak--l" />
 
         <InputSelect<Employee>
-          isLoading={isLoading}
+          isLoading={isLoadingEmployees}
           defaultValue={EMPTY_EMPLOYEE}
           items={employees === null ? [] : [EMPTY_EMPLOYEE, ...employees]}
           label="Filter by employee"
@@ -64,6 +84,9 @@ export function App() {
             if (newValue === null) {
               return
             }
+            if (newValue.id === '') {
+              return loadAllTransactions()
+            }
 
             await loadTransactionsByEmployee(newValue.id)
           }}
@@ -72,19 +95,24 @@ export function App() {
         <div className="RampBreak--l" />
 
         <div className="RampGrid">
-          <Transactions transactions={transactions} />
-
-          {transactions !== null && (
-            <button
-              className="RampButton"
-              disabled={paginatedTransactionsUtils.loading}
-              onClick={async () => {
-                await loadAllTransactions()
-              }}
-            >
-              View More
-            </button>
-          )}
+          <Transactions
+            isPaginatedView={isPaginatedView}
+            transactionsLoading={isLoading}
+            transactions={transactions}
+          />
+          {(transactions !== null) &&
+            (paginatedTransactions?.nextPage !== null) &&
+              (paginatedTransactions?.data != null) && (
+              <button
+                className="RampButton"
+                disabled={paginatedTransactionsUtils.loading}
+                onClick={async () => {
+                  await loadAllTransactions()
+                }}
+              >
+                View More
+              </button>
+            )}
         </div>
       </main>
     </Fragment>

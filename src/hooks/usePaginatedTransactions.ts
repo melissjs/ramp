@@ -21,14 +21,12 @@ export function usePaginatedTransactions(): PaginatedTransactionsResult {
       if (response === null || previousResponse === null) {
         return response
       }
-
-      return { data: response.data, nextPage: response.nextPage }
+      return { data: [...previousResponse.data, ...response.data], nextPage: response.nextPage }
     })
   }, [fetchWithCache, paginatedTransactions])
 
   const invalidateData = useCallback(() => {
     setPaginatedTransactions(null)
   }, [])
-
   return { data: paginatedTransactions, loading, fetchAll, invalidateData }
 }

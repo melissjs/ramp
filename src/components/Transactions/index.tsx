@@ -4,20 +4,19 @@ import { SetTransactionApprovalParams } from "src/utils/types"
 import { TransactionPane } from "./TransactionPane"
 import { SetTransactionApprovalFunction, TransactionsComponent } from "./types"
 
-export const Transactions: TransactionsComponent = ({ transactions }) => {
-  const { fetchWithoutCache, loading } = useCustomFetch()
+export const Transactions: TransactionsComponent = ({ transactions, transactionsLoading, isPaginatedView }) => {
+  const { fetchWithoutCache, clearCache, loading } = useCustomFetch()
 
   const setTransactionApproval = useCallback<SetTransactionApprovalFunction>(
     async ({ transactionId, newValue }) => {
+      clearCache()
       await fetchWithoutCache<void, SetTransactionApprovalParams>("setTransactionApproval", {
         transactionId,
         value: newValue,
-      })
-    },
-    [fetchWithoutCache]
-  )
+      })}, [fetchWithoutCache, isPaginatedView])
 
-  if (transactions === null) {
+  if (transactions === null ||
+    (transactionsLoading && !isPaginatedView)) {
     return <div className="RampLoading--container">Loading...</div>
   }
 

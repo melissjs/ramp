@@ -14,7 +14,6 @@ const data: { employees: Employee[]; transactions: Transaction[] } = {
   employees: mockData.employees,
   transactions: mockData.transactions,
 }
-
 export const getEmployees = (): Employee[] => data.employees
 
 export const getTransactionsPaginated = ({
@@ -55,6 +54,5 @@ export const setTransactionApproval = ({ transactionId, value }: SetTransactionA
   if (!transaction) {
     throw new Error("Invalid transaction to approve")
   }
-
   transaction.approved = value
 }
